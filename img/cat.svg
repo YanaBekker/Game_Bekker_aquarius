@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150">
+  <style>
+    /* Основная анимация */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 4px #00ff88); }
+      50% { filter: drop-shadow(0 0 12px #00ff88); }
+    }
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    @keyframes eyeGlow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    /* Анимации для лап */
+    @keyframes frontPawRight {
+      0%, 50%, 100% { transform: translateY(0); }
+      25% { transform: translateY(-3px); }
+      75% { transform: translateY(3px); }
+    }
+    
+    @keyframes frontPawLeft {
+      0%, 50%, 100% { transform: translateY(0); }
+      25% { transform: translateY(3px); }
+      75% { transform: translateY(-3px); }
+    }
+    
+    @keyframes backPawRight {
+      0%, 50%, 100% { transform: translateY(0); }
+      25% { transform: translateY(2px); }
+      75% { transform: translateY(-2px); }
+    }
+    
+    @keyframes backPawLeft {
+      0%, 50%, 100% { transform: translateY(0); }
+      25% { transform: translateY(-2px); }
+      75% { transform: translateY(2px); }
+    }
+    
+    /* Классы для изменения направления */
+    .facing-left {
+      transform: scaleX(1);
+    }
+    .facing-right {
+      transform: scaleX(-1);
+    }
+    
+    /* Общие классы */
+    .floating {
+      animation: float 4s ease-in-out infinite;
+    }
+    .quantum-glow {
+      animation: glow 3s ease-in-out infinite;
+    }
+    .sparkle {
+      animation: sparkle 2s ease-in-out infinite;
+    }
+    .eye-glow {
+      animation: eyeGlow 1.5s ease-in-out infinite;
+    }
+    
+    /* Классы для анимации лап */
+    .front-paw-right {
+      animation: frontPawRight 0.8s ease-in-out infinite;
+    }
+    .front-paw-left {
+      animation: frontPawLeft 0.8s ease-in-out infinite;
+    }
+    .back-paw-right {
+      animation: backPawRight 1s ease-in-out infinite;
+    }
+    .back-paw-left {
+      animation: backPawLeft 1s ease-in-out infinite;
+    }
+  </style>
+  
+  <!-- Кошка смотрит влево (по умолчанию) -->
+  <g id="quantum-cat" class="floating quantum-glow facing-left" transform-origin="100 100">
+    <!-- Квантовые частицы -->
+    <polygon points="25,45 28,48 31,45 28,42" fill="#00ff88" class="sparkle" style="animation-delay: 0s"/>
+    <polygon points="175,75 178,78 181,75 178,72" fill="#26d0ce" class="sparkle" style="animation-delay: 0.5s"/>
+    <polygon points="45,125 48,128 51,125 48,122" fill="#ff6b6b" class="sparkle" style="animation-delay: 1s"/>
+    <polygon points="155,35 158,38 161,35 158,32" fill="#ffd200" class="sparkle" style="animation-delay: 1.5s"/>
+    
+    <!-- Тело кошки -->
+    <polygon points="70,85 85,75 120,75 135,85 140,100 135,115 120,125 85,125 70,115 65,100" 
+             fill="#666" stroke="#444" stroke-width="2"/>
+    
+    <!-- Хвост -->
+    <polygon points="135,95 150,85 165,90 170,100 165,105 150,100 140,100" 
+             fill="#555" stroke="#444" stroke-width="2"/>
+    
+    <!-- Голова -->
+    <polygon points="50,80 60,70 80,70 90,80 90,95 80,105 60,105 50,95" 
+             fill="#777" stroke="#444" stroke-width="2"/>
+    
+    <!-- Уши -->
+    <polygon id="right-ear" points="72,70 80,50 84,72" fill="#666" stroke="#444" stroke-width="2"/>
+    <polygon id="left-ear" points="56,72 60,50 68,70" fill="#666" stroke="#444" stroke-width="2"/>
+    
+    <!-- Глаза -->
+    <g id="eyes">
+      <polygon points="51,82 57,78 62,82 57,86" fill="#00ff88" class="eye-glow"/>
+      <ellipse cx="57" cy="82" rx="2" ry="3" fill="#00cc66"/>
+      <polygon points="71,82 77,78 82,82 77,86" fill="#00ff88" class="eye-glow"/>
+      <ellipse cx="77" cy="82" rx="2" ry="3" fill="#00cc66"/>
+    </g>
+    
+    <!-- Нос -->
+    <polygon points="60,87 70,87 65,90" fill="#ff6b8b"/>
+    
+    <!-- Усы -->
+    <g id="whiskers-left">
+      <line x1="60" y1="88" x2="42" y2="86" stroke="#fff" stroke-width="1" opacity="0.7"/>
+      <line x1="60" y1="90" x2="42" y2="90" stroke="#fff" stroke-width="1" opacity="0.7"/>
+      <line x1="60" y1="92" x2="42" y2="94" stroke="#fff" stroke-width="1" opacity="0.7"/>
+    </g>
+    <g id="whiskers-right">
+      <line x1="70" y1="88" x2="92" y2="86" stroke="#fff" stroke-width="1" opacity="0.7"/>
+      <line x1="70" y1="90" x2="92" y2="90" stroke="#fff" stroke-width="1" opacity="0.7"/>
+      <line x1="70" y1="92" x2="92" y2="94" stroke="#fff" stroke-width="1" opacity="0.7"/>
+    </g>
+    
+    <!-- Передние лапы -->
+    <g id="front-paws">
+      <!-- Передняя левая лапа -->
+      <polygon id="front-left-paw" points="81,115 85,115 87,125 85,135 81,135 79,125" 
+               fill="#666" stroke="#444" stroke-width="2" class="front-paw-left"/>
+      
+      <!-- Передняя правая лапа -->
+      <polygon id="front-right-paw" points="93,115 97,115 99,125 97,135 93,135 91,125" 
+               fill="#666" stroke="#444" stroke-width="2" class="front-paw-right"/>
+    </g>
+    
+    <!-- Задние лапы -->
+    <g id="back-paws">
+      <!-- Задняя левая лапа -->
+      <polygon id="back-left-paw" points="113,115 117,115 119,125 117,135 113,135 111,125" 
+               fill="#666" stroke="#444" stroke-width="2" class="back-paw-left"/>
+      
+      <!-- Задняя правая лапа -->
+      <polygon id="back-right-paw" points="128,115 132,115 134,125 132,135 128,135 126,125" 
+               fill="#666" stroke="#444" stroke-width="2" class="back-paw-right"/>
+    </g>
+    
+    <!-- Квантовый ореол -->
+    <polygon points="100,55 125,65 140,90 125,115 75,115 60,90 75,65" 
+             fill="none" stroke="rgba(0, 255, 136, 0.15)" stroke-width="2" stroke-dasharray="5,3"/>
+    
+    <!-- Мигающие квантовые точки -->
+    <polygon points="165,55 168,58 171,55 168,52" fill="#ff3333">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="35,115 38,118 41,115 38,112" fill="#00ff88">
+      <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="125,45 128,48 131,45 128,42" fill="#ffd200">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+</svg>

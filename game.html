@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Водолей - Игра</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="help-shortcut">
+      <button id="help-btn-game" class="btn-help" title="Управление">
+        <i class="fas fa-gamepad"></i>
+      </button>
+      <div class="help-tooltip" id="help-tooltip-game">
+        <h3><i class="fas fa-keyboard"></i> Горячие клавиши</h3>
+        <div class="help-grid">
+          <div class="help-item">
+            <span class="help-key">1-5</span>
+            <span class="help-desc">Выбор емкости</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Alt+1-5</span>
+            <span class="help-desc">Выбор цели</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">F</span>
+            <span class="help-desc">Заполнить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">E</span>
+            <span class="help-desc">Опустошить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">T</span>
+            <span class="help-desc">Перелить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">S</span>
+            <span class="help-desc">Поменять местами</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">C</span>
+            <span class="help-desc">Сбросить выбор</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Enter</span>
+            <span class="help-desc">Проверить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Esc</span>
+            <span class="help-desc">Перезапуск</span>
+          </div>
+        </div>
+        <div class="help-mouse">
+          <h4><i class="fas fa-mouse-pointer"></i> Мышь</h4>
+          <p>• Клик - выбрать источник</p>
+          <p>• Ctrl+Клик - выбрать цель</p>
+          <p>• Ctrl+Двойной клик - быстро перелить</p>
+          <p
+            style="
+              color: #39ff14;
+              margin-top: 10px;
+              border-top: 1px solid rgba(57, 255, 20, 0.3);
+              padding-top: 5px;
+            "
+          >
+            <i class="fas fa-skull-crossbones"></i> На 2 уровне: Ядовитая
+            кислота (зелёная) - нельзя сливать или смешивать с водой!
+          </p>
+           <p
+            style="
+              color: #ffcc00;
+              margin-top: 10px;
+              border-top: 1px solid rgba(255, 204, 0, 0.3);
+              padding-top: 5px;
+            ">
+            <i class="fas fa-exclamation-triangle"></i>  На 3 уровне: Глюки пространства! 
+              Емкости могут исчезать или появляться каждые 10 секунд!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div id="page-game" class="active">
+        <div class="game-header">
+          <div class="level-info">
+            <h2>Уровень: <span id="current-level">1</span>/3</h2>
+            <p>
+              Игрок: <span id="player-display">Игрок</span> | Уровень сложности:
+              <span id="difficulty-display">Средний</span>
+            </p>
+          </div>
+
+          <div class="game-stats">
+            <div class="timer" id="timer">00:00</div>
+            <div class="score-display">
+              Очки: <span id="current-score">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="level-indicator">
+          <div class="level-dot active" data-level="1"></div>
+          <div class="level-dot" data-level="2"></div>
+          <div class="level-dot" data-level="3"></div>
+        </div>
+
+        <div class="message" id="game-message"></div>
+
+        <div class="game-layout">
+          <div class="vessels-row-top" id="vessels-container"></div>
+
+          <div class="game-center-section">
+            <div class="target-center">
+              <div class="target-display">
+                <div class="target" id="target-vessel">
+                  <div
+                    class="target-fill"
+                    id="target-fill"
+                    style="height: 0%"
+                  ></div>
+                </div>
+                <div class="target-text">
+                  Цель:
+                  <div class="target-amount" id="target-amount">0</div>
+                  литров
+                </div>
+              </div>
+            </div>
+
+            <div class="controls-center">
+              <div class="selection-info">
+                <p>Источник: <span id="selected-source">Не выбрана</span></p>
+                <p>Цель: <span id="selected-target">Не выбрана</span></p>
+              </div>
+
+              <div class="controls-grid">
+                <div class="control-group">
+                  <button id="fill-btn" class="btn btn-small btn-block">
+                    <i class="fas fa-faucet"></i> Заполнить
+                  </button>
+                  <button id="empty-btn" class="btn btn-small btn-block">
+                    <i class="fas fa-tint-slash"></i> Опустошить
+                  </button>
+                </div>
+                <div class="control-group">
+                  <button
+                    id="swap-btn"
+                    class="btn btn-small btn-warning btn-block"
+                  >
+                    <i class="fas fa-random"></i> Поменять
+                  </button>
+                  <button
+                    id="clear-btn"
+                    class="btn btn-small btn-danger btn-block"
+                  >
+                    <i class="fas fa-times"></i> Сбросить выбор
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-actions">
+            <button id="transfer-btn" class="btn btn-success">
+              <i class="fas fa-exchange-alt"></i> Перелить воду
+            </button>
+            <button id="check-solution" class="btn btn-primary">
+              <i class="fas fa-check"></i> Проверить решение
+            </button>
+            <button id="next-level" class="btn">
+              <i class="fas fa-forward"></i> Следующий уровень
+            </button>
+            <button id="restart-game" class="btn btn-danger">
+              <i class="fas fa-redo"></i> Начать заново
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <p>Игра "Водолей" - Разработано для предмета Веб-разработка 2025</p>
+      </footer>
+    </div>
+
+    <script src="scripts/script.js"></script>
+  </body>
+</html>

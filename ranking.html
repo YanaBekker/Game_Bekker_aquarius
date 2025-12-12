@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Водолей - Рейтинг</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="ranking-content active">
+        <div class="ranking-header">
+          <h1 id="ranking-title">Топ игроков</h1>
+          <div id="final-results" style="display: none">
+            <div class="final-score-display">
+              <h3>Итоги игры</h3>
+              <p>Игрок: <span id="final-player">Игрок</span></p>
+              <p>
+                Уровень сложности: <span id="final-difficulty">Средний</span>
+              </p>
+              <div class="score" style="font-size: 1.8rem; margin: 15px 0">
+                Итоговый счет: <span id="final-score">0</span>
+              </div>
+              <p
+                id="final-message"
+                style="font-style: italic; margin: 15px 0"
+              ></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ranking-table-container">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th>Место</th>
+                <th>Имя игрока</th>
+                <th>Уровень сложности</th>
+                <th>Счет</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody id="ranking-body"></tbody>
+          </table>
+        </div>
+
+        <div class="ranking-actions">
+          <button id="back-to-menu" class="btn">
+            <i class="fas fa-home"></i> В главное меню
+          </button>
+        </div>
+      </div>
+
+      <footer>
+        <p>Игра "Водолей" - Разработано для предмета Веб-разработка 2025</p>
+      </footer>
+    </div>
+
+    <script src="scripts/script.js"></script>
+  </body>
+</html>

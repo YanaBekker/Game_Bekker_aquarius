@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Водолей - Главное меню</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="help-shortcut">
+      <button id="help-btn-game" class="btn-help" title="Управление">
+        <i class="fas fa-gamepad"></i>
+      </button>
+      <div class="help-tooltip" id="help-tooltip-game">
+        <h3><i class="fas fa-keyboard"></i> Горячие клавиши</h3>
+        <div class="help-grid">
+          <div class="help-item">
+            <span class="help-key">1-5</span
+            ><span class="help-desc">Выбор емкости</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Alt+1-5</span
+            ><span class="help-desc">Выбор цели</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">F</span
+            ><span class="help-desc">Заполнить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">E</span
+            ><span class="help-desc">Опустошить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">T</span
+            ><span class="help-desc">Перелить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">S</span
+            ><span class="help-desc">Поменять местами</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">C</span
+            ><span class="help-desc">Сбросить выбор</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Enter</span
+            ><span class="help-desc">Проверить</span>
+          </div>
+          <div class="help-item">
+            <span class="help-key">Esc</span
+            ><span class="help-desc">Перезапуск</span>
+          </div>
+        </div>
+        <div class="help-mouse">
+          <h4><i class="fas fa-mouse-pointer"></i> Мышь</h4>
+          <p>• Клик - выбрать источник</p>
+          <p>• Ctrl+Клик - выбрать цель</p>
+          <p>• Ctrl+Двойной клик - быстро перелить</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="start-content active">
+        <h1 class="game-title">ВОДОЛЕЙ</h1>
+        <p class="subtitle">Игра на логику и точность измерений</p>
+
+        <div class="form-group">
+          <label for="player-name"
+            ><i class="fas fa-user"></i> Введите ваше имя:</label
+          >
+          <input
+            type="text"
+            id="player-name"
+            placeholder="Игрок"
+            maxlength="20"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="difficulty"
+            ><i class="fas fa-tachometer-alt"></i> Выберите уровень
+            сложности:</label
+          >
+          <select id="difficulty">
+            <option value="easy">Легкий (3 емкости, 5 минут)</option>
+            <option value="medium" selected>
+              Средний (4 емкости, 4 минуты)
+            </option>
+            <option value="hard">Сложный (5 емкостей, 3 минуты)</option>
+          </select>
+        </div>
+
+        <div class="instructions">
+          <h3><i class="fas fa-info-circle"></i> Правила игры:</h3>
+          <ul>
+            <li>Вам даны емкости с разным объемом и количеством воды</li>
+            <li>Необходимо отмерить точно указанное количество воды</li>
+            <li>
+              Выберите емкость-источник (синяя рамка) и емкость-цель (оранжевая
+              рамка)
+            </li>
+            <li>Нажмите "Перелить" для перемещения воды между емкостями</li>
+            <li>
+              Используйте кнопки "Заполнить" и "Опустошить" для управления
+            </li>
+            <li>
+              Ctrl+Двойной клик по емкости быстро переливает из выбранного
+              источника
+            </li>
+            <li>
+              На каждом уровне 3 задания, которые нужно выполнить за отведенное
+              время
+            </li>
+          </ul>
+        </div>
+
+        <div class="start-buttons">
+          <button id="start-game" class="btn btn-primary">
+            <i class="fas fa-play"></i> Начать игру
+          </button>
+          <button id="view-ranking" class="btn">
+            <i class="fas fa-trophy"></i> Рейтинг игроков
+          </button>
+        </div>
+      </div>
+
+      <footer>
+        <p>Игра "Водолей" - Разработано для предмета Веб-разработка 2025</p>
+      </footer>
+    </div>
+
+    <script src="scripts/script.js"></script>
+  </body>
+</html>
