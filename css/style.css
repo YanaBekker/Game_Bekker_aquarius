@@ -944,7 +944,6 @@ footer {
   animation: catGlow 3s infinite alternate;
 }
 
-/* Стили для ядовито-зеленой кислоты */
 .has-acid {
   position: relative;
 }
