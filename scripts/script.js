@@ -63,7 +63,8 @@ const Game = (function () {
   };
 
   const startGameFromMenu = () => {
-    const playerName = document.getElementById("player-name").value.trim() || "Игрок";
+    const playerName =
+      document.getElementById("player-name").value.trim() || "Игрок";
     const difficulty = document.getElementById("difficulty").value;
 
     localStorage.setItem(
@@ -414,17 +415,24 @@ const Game = (function () {
         } else if (i === 1) {
           capacity = Math.floor(Math.random() * 6) + 3;
         } else {
-          const simpleVolumes = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20];
+          const simpleVolumes = [
+            2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20,
+          ];
           capacity =
             simpleVolumes[Math.floor(Math.random() * simpleVolumes.length)];
         }
         attempts++;
-      } while ((capacities.includes(capacity) || capacity > maxVolume || capacity < 2) && attempts < 20);
-      
+      } while (
+        (capacities.includes(capacity) ||
+          capacity > maxVolume ||
+          capacity < 2) &&
+        attempts < 20
+      );
+
       if (attempts >= 20) {
         capacity = Math.floor(Math.random() * (maxVolume - 2)) + 2;
       }
-      
+
       capacities.push(capacity);
     }
 
@@ -528,69 +536,73 @@ const Game = (function () {
 
   const generateTarget = () => {
     const difficultyConfig = config[state.difficulty];
-    
+
     const capacities = state.vessels
-      .filter(v => v.acidAmount === 0)
-      .map(v => v.capacity);
-    
+      .filter((v) => v.acidAmount === 0)
+      .map((v) => v.capacity);
+
     if (capacities.length === 0) {
-      state.targetAmount = Math.floor(Math.random() * difficultyConfig.maxVolume) + 1;
+      state.targetAmount =
+        Math.floor(Math.random() * difficultyConfig.maxVolume) + 1;
     } else {
-      state.targetAmount = generateAchievableTarget(capacities, difficultyConfig.maxVolume);
+      state.targetAmount = generateAchievableTarget(
+        capacities,
+        difficultyConfig.maxVolume
+      );
     }
-    
+
     if (!state.usedTargets.includes(state.targetAmount)) {
       state.usedTargets.push(state.targetAmount);
     }
 
     document.getElementById("target-amount").textContent = state.targetAmount;
     document.getElementById("target-fill").style.height = "0%";
-    
+
     randomizeVesselContents();
   };
 
   const generateAchievableTarget = (capacities, maxVolume) => {
     const possibleTargets = new Set();
-    
-    capacities.forEach(capacity => {
+
+    capacities.forEach((capacity) => {
       possibleTargets.add(capacity);
-      
+
       if (capacity % 2 === 0) possibleTargets.add(capacity / 2);
       if (capacity % 3 === 0) possibleTargets.add(capacity / 3);
       if (capacity % 4 === 0) possibleTargets.add(capacity / 4);
     });
-    
+
     for (let i = 0; i < capacities.length; i++) {
       for (let j = i + 1; j < capacities.length; j++) {
         const sum = capacities[i] + capacities[j];
         if (sum <= maxVolume) possibleTargets.add(sum);
-        
+
         const diff = Math.abs(capacities[i] - capacities[j]);
         if (diff > 0) possibleTargets.add(diff);
       }
     }
-    
+
     const validTargets = Array.from(possibleTargets)
-      .filter(v => v > 0 && v <= maxVolume && Number.isInteger(v))
+      .filter((v) => v > 0 && v <= maxVolume && Number.isInteger(v))
       .sort((a, b) => a - b);
-    
+
     if (validTargets.length === 0) {
       return Math.floor(Math.random() * maxVolume) + 1;
     }
-    
+
     const difficultyConfig = config[state.difficulty];
     if (state.tasksCompleted < difficultyConfig.tasksPerLevel / 2) {
-      const easyTargets = validTargets.filter(v => v <= maxVolume / 2);
+      const easyTargets = validTargets.filter((v) => v <= maxVolume / 2);
       if (easyTargets.length > 0) {
         return easyTargets[Math.floor(Math.random() * easyTargets.length)];
       }
     } else {
-      const hardTargets = validTargets.filter(v => v > maxVolume / 2);
+      const hardTargets = validTargets.filter((v) => v > maxVolume / 2);
       if (hardTargets.length > 0) {
         return hardTargets[Math.floor(Math.random() * hardTargets.length)];
       }
     }
-    
+
     return validTargets[Math.floor(Math.random() * validTargets.length)];
   };
 
@@ -608,13 +620,14 @@ const Game = (function () {
       } else {
         vessel.amount = 0;
         if (Math.random() > 0.5) {
-          vessel.acidAmount = Math.floor(Math.random() * (vessel.capacity * 0.7)) + 1;
+          vessel.acidAmount =
+            Math.floor(Math.random() * (vessel.capacity * 0.7)) + 1;
         }
       }
-      
+
       updateVesselDisplay(index);
     });
-    
+
     if (Math.random() > 0.5) {
       showMessage("Начальные условия изменились!", true, "info", 2500);
     }
@@ -1018,7 +1031,9 @@ const Game = (function () {
         vesselShape.appendChild(newFillElement);
       }
       const currentFillElement = vessel.element.querySelector(".vessel-fill");
-      currentFillElement.style.height = `${(vessel.amount / vessel.capacity) * 100}%`;
+      currentFillElement.style.height = `${
+        (vessel.amount / vessel.capacity) * 100
+      }%`;
 
       if (waterAmountElement) {
         waterAmountElement.innerHTML = `Вода: <strong>${vessel.amount} л</strong>`;
@@ -1537,7 +1552,7 @@ const Game = (function () {
   const animateVessel = (index, animation = "pulse") => {
     const vesselElement = state.vessels[index].element;
     if (!vesselElement) return;
-    
+
     vesselElement.classList.add(animation);
     setTimeout(() => vesselElement.classList.remove(animation), 500);
   };
@@ -1665,7 +1680,8 @@ const Game = (function () {
   };
 
   document.addEventListener("DOMContentLoaded", () => {
-    const currentPage = window.location.pathname.split("/").pop() || "index.html";
+    const currentPage =
+      window.location.pathname.split("/").pop() || "index.html";
 
     Game.init();
 
