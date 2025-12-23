@@ -6,6 +6,11 @@ const Game = (function () {
       maxVolume: 10,
       scoreMultiplier: 1,
       tasksPerLevel: 3,
+      acidProbability: 0.3,
+      minAcidAmount: 1,
+      maxAcidAmount: 0.4,
+      randomizeChance: 0.6,
+      complexTargetChance: 0.4,
     },
     medium: {
       vessels: 4,
@@ -13,6 +18,11 @@ const Game = (function () {
       maxVolume: 15,
       scoreMultiplier: 1.5,
       tasksPerLevel: 4,
+      acidProbability: 0.4,
+      minAcidAmount: 2,
+      maxAcidAmount: 0.5,
+      randomizeChance: 0.7,
+      complexTargetChance: 0.6,
     },
     hard: {
       vessels: 5,
@@ -20,13 +30,18 @@ const Game = (function () {
       maxVolume: 20,
       scoreMultiplier: 2,
       tasksPerLevel: 5,
+      acidProbability: 0.5,
+      minAcidAmount: 3,
+      maxAcidAmount: 0.6,
+      randomizeChance: 0.8,
+      complexTargetChance: 0.8,
     },
   };
 
-  const secondLevelVessels = {
-    easy: 4,
-    medium: 5,
-    hard: 6,
+  const levelVessels = {
+    1: { easy: 3, medium: 4, hard: 5 },
+    2: { easy: 4, medium: 5, hard: 6 },
+    3: { easy: 4, medium: 5, hard: 6 },
   };
 
   const state = {
@@ -50,6 +65,7 @@ const Game = (function () {
     acidAmounts: [],
     glitchInterval: null,
     minVessels: 0,
+    acidRules: null,
   };
 
   let ranking = JSON.parse(localStorage.getItem("waterSortRanking")) || [];
@@ -103,7 +119,8 @@ const Game = (function () {
       acidVessels: [],
       acidAmounts: [],
       glitchInterval: null,
-      minVessels: config[gameData.difficulty].vessels,
+      minVessels: levelVessels[1][gameData.difficulty],
+      acidRules: null,
     });
 
     document.getElementById("player-display").textContent = state.playerName;
@@ -127,6 +144,7 @@ const Game = (function () {
     state.acidPresent = false;
     state.acidVessels = [];
     state.acidAmounts = [];
+    state.acidRules = null;
 
     document.getElementById("current-level").textContent = state.currentLevel;
     document.getElementById("selected-source").textContent = "Не выбрана";
@@ -167,13 +185,30 @@ const Game = (function () {
           );
         } else if (state.currentLevel === 3) {
           showMessage(
-            "УРОВЕНЬ 3: Кислота возвращается! Будьте осторожны - емкости могут появляться и исчезать каждые 10 секунд!",
+            "УРОВЕНЬ 3: Кислота возвращается! Будьте осторожны - емкости могут появляться, исчезать и меняться каждые 8 секунд!",
             true,
             "warning",
             4000
           );
 
           startGlitchEffect();
+
+          state.acidRules = {
+            canTransferToEmpty: Math.random() > 0.5,
+            canMixWithWater: false,
+            acidEvaporation: true,
+          };
+
+          setTimeout(() => {
+            if (state.acidRules && state.acidRules.acidEvaporation) {
+              showMessage(
+                "ВНИМАНИЕ: Кислота стала нестабильной! При переливании может испаряться!",
+                true,
+                "warning",
+                5000
+              );
+            }
+          }, 4500);
         }
       }, 2100);
     }, 500);
@@ -192,14 +227,20 @@ const Game = (function () {
         return;
       }
 
-      if (Math.random() < 0.3) {
-        if (Math.random() > 0.5 && state.vessels.length > state.minVessels) {
+      if (Math.random() < 0.5) {
+        const actionType = Math.random();
+
+        if (actionType < 0.4 && state.vessels.length > state.minVessels) {
           removeRandomVessel();
-        } else {
+        } else if (actionType < 0.7) {
           addRandomVessel();
+        } else if (actionType < 0.85) {
+          changeVesselCapacity();
+        } else {
+          shuffleVesselContents();
         }
       }
-    }, 10000);
+    }, 8000);
   };
 
   const removeRandomVessel = () => {
@@ -290,20 +331,26 @@ const Game = (function () {
     const vesselsContainer = document.getElementById("vessels-container");
 
     const newIndex = state.vessels.length;
-    const hasAcid = Math.random() > 0.7;
-    const capacity =
-      Math.floor(Math.random() * (difficultyConfig.maxVolume - 2)) + 2;
+    const hasAcid = Math.random() < difficultyConfig.acidProbability;
+    const capacity = generateComplexCapacity(difficultyConfig.maxVolume);
 
     let initialAmount = 0;
     let acidAmount = 0;
 
     if (hasAcid) {
-      acidAmount = Math.floor(Math.random() * (capacity * 0.7)) + 1;
-      acidAmount = Math.min(acidAmount, capacity);
-      initialAmount = 0;
+      const maxAcid = Math.floor(capacity * difficultyConfig.maxAcidAmount);
+      acidAmount = Math.max(
+        difficultyConfig.minAcidAmount,
+        Math.floor(Math.random() * maxAcid) + 1
+      );
+
+      if (Math.random() < 0.2 && capacity - acidAmount > 0) {
+        initialAmount = Math.floor(Math.random() * (capacity - acidAmount));
+      }
+
       state.acidVessels.push(newIndex);
     } else {
-      initialAmount = Math.floor(Math.random() * (capacity + 1));
+      initialAmount = generateInitialAmount(capacity);
     }
 
     const vessel = {
@@ -385,6 +432,137 @@ const Game = (function () {
     );
   };
 
+  const changeVesselCapacity = () => {
+    if (state.vessels.length === 0) return;
+
+    const index = Math.floor(Math.random() * state.vessels.length);
+    const vessel = state.vessels[index];
+    const oldCapacity = vessel.capacity;
+
+    const changeFactor = 0.7 + Math.random() * 0.6;
+    const newCapacity = Math.max(2, Math.floor(oldCapacity * changeFactor));
+
+    const waterRatio = vessel.amount / oldCapacity;
+    const acidRatio = vessel.acidAmount / oldCapacity;
+
+    vessel.capacity = newCapacity;
+    vessel.amount = Math.floor(newCapacity * waterRatio);
+    vessel.acidAmount = Math.floor(newCapacity * acidRatio);
+
+    updateVesselDisplay(index);
+
+    showMessage(
+      `Емкость ${
+        index + 1
+      } изменила вместимость с ${oldCapacity}л на ${newCapacity}л!`,
+      true,
+      "warning",
+      3500
+    );
+  };
+
+  const shuffleVesselContents = () => {
+    const cleanVessels = state.vessels
+      .map((v, i) => ({ ...v, index: i }))
+      .filter((v) => v.acidAmount === 0);
+
+    if (cleanVessels.length < 2) return;
+
+    const totalWater = cleanVessels.reduce((sum, v) => sum + v.amount, 0);
+
+    let remainingWater = totalWater;
+    const shuffledVessels = [...cleanVessels];
+
+    for (let i = shuffledVessels.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledVessels[i], shuffledVessels[j]] = [
+        shuffledVessels[j],
+        shuffledVessels[i],
+      ];
+    }
+
+    for (let i = 0; i < shuffledVessels.length; i++) {
+      const vessel = shuffledVessels[i];
+      if (i === shuffledVessels.length - 1) {
+        vessel.amount = remainingWater;
+      } else {
+        const maxPossible = Math.min(vessel.capacity, remainingWater);
+        const randomAmount = Math.floor(Math.random() * (maxPossible + 1));
+        vessel.amount = randomAmount;
+        remainingWater -= randomAmount;
+      }
+
+      state.vessels[vessel.index].amount = vessel.amount;
+      updateVesselDisplay(vessel.index);
+    }
+
+    showMessage(
+      "Глюк пространства перемешал воду между сосудами!",
+      true,
+      "warning",
+      3500
+    );
+  };
+
+  const generateComplexCapacity = (maxVolume) => {
+    const patterns = [
+      () => Math.floor(Math.random() * (maxVolume - 10)) + 10,
+      () => [3, 5, 7, 11][Math.floor(Math.random() * 4)],
+      () => {
+        const baseCapacities = [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20];
+        const randomBase =
+          baseCapacities[Math.floor(Math.random() * baseCapacities.length)];
+        return randomBase;
+      },
+      () => {
+        const primes = [13, 17, 19];
+        return primes[Math.floor(Math.random() * primes.length)];
+      },
+    ];
+
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+    let capacity = pattern();
+
+    if (capacity > maxVolume) {
+      capacity = Math.floor(maxVolume * 0.8);
+    }
+
+    if (capacity < 2) {
+      capacity = 2;
+    }
+
+    return capacity;
+  };
+
+  const generateInitialAmount = (capacity) => {
+    const randomPattern = Math.random();
+
+    if (randomPattern < 0.2) return 0;
+    if (randomPattern < 0.4) return capacity;
+    if (randomPattern < 0.7) return Math.floor(Math.random() * capacity);
+
+    const possibleAmounts = [];
+    for (let div = 2; div <= capacity / 2; div++) {
+      if (capacity % div === 0) {
+        possibleAmounts.push(div);
+        possibleAmounts.push(capacity - div);
+      }
+    }
+
+    const primes = [2, 3, 5, 7, 11, 13, 17, 19];
+    primes.forEach((prime) => {
+      if (prime < capacity) possibleAmounts.push(prime);
+    });
+
+    if (possibleAmounts.length > 0) {
+      return possibleAmounts[
+        Math.floor(Math.random() * possibleAmounts.length)
+      ];
+    }
+
+    return Math.floor(Math.random() * capacity);
+  };
+
   const generateVessels = () => {
     const difficultyConfig = config[state.difficulty];
     const vesselsContainer = document.getElementById("vessels-container");
@@ -393,9 +571,9 @@ const Game = (function () {
     state.acidVessels = [];
     state.acidAmounts = [];
 
-    let numVessels = difficultyConfig.vessels;
+    let numVessels = levelVessels[state.currentLevel][state.difficulty];
+
     if (state.currentLevel === 2 || state.currentLevel === 3) {
-      numVessels = secondLevelVessels[state.difficulty];
       state.acidPresent = true;
     } else {
       state.acidPresent = false;
@@ -407,30 +585,17 @@ const Game = (function () {
     const maxVolume = difficultyConfig.maxVolume;
 
     for (let i = 0; i < numVessels; i++) {
-      let capacity;
+      let capacity = generateComplexCapacity(maxVolume);
+
       let attempts = 0;
-      do {
-        if (i === 0) {
-          capacity = Math.floor(Math.random() * (maxVolume - 8)) + 8;
-        } else if (i === 1) {
-          capacity = Math.floor(Math.random() * 6) + 3;
-        } else {
-          const simpleVolumes = [
-            2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20,
-          ];
-          capacity =
-            simpleVolumes[Math.floor(Math.random() * simpleVolumes.length)];
-        }
-        attempts++;
-      } while (
+      while (
         (capacities.includes(capacity) ||
           capacity > maxVolume ||
           capacity < 2) &&
-        attempts < 20
-      );
-
-      if (attempts >= 20) {
-        capacity = Math.floor(Math.random() * (maxVolume - 2)) + 2;
+        attempts < 30
+      ) {
+        capacity = generateComplexCapacity(maxVolume);
+        attempts++;
       }
 
       capacities.push(capacity);
@@ -439,8 +604,18 @@ const Game = (function () {
     capacities.sort((a, b) => b - a);
 
     if (state.acidPresent) {
-      const acidCount =
-        state.difficulty === "easy" ? 1 : state.difficulty === "medium" ? 1 : 2;
+      let acidCount;
+      switch (state.difficulty) {
+        case "easy":
+          acidCount = state.currentLevel === 3 ? 2 : 1;
+          break;
+        case "medium":
+          acidCount = state.currentLevel === 3 ? 3 : 2;
+          break;
+        case "hard":
+          acidCount = state.currentLevel === 3 ? 4 : 2;
+          break;
+      }
 
       for (let i = 0; i < acidCount; i++) {
         let acidIndex;
@@ -459,13 +634,17 @@ const Game = (function () {
       let acidAmount = 0;
 
       if (hasAcid) {
-        acidAmount = Math.min(
-          Math.floor(capacity * (0.3 + Math.random() * 0.4)),
-          capacity - 1
+        const maxAcid = Math.floor(capacity * difficultyConfig.maxAcidAmount);
+        acidAmount = Math.max(
+          difficultyConfig.minAcidAmount,
+          Math.floor(Math.random() * maxAcid) + 1
         );
-        initialAmount = 0;
+
+        if (Math.random() < 0.2 && capacity - acidAmount > 0) {
+          initialAmount = Math.floor(Math.random() * (capacity - acidAmount));
+        }
       } else {
-        initialAmount = Math.floor(Math.random() * (capacity + 1));
+        initialAmount = generateInitialAmount(capacity);
       }
 
       const vessel = {
@@ -537,16 +716,17 @@ const Game = (function () {
   const generateTarget = () => {
     const difficultyConfig = config[state.difficulty];
 
-    const capacities = state.vessels
-      .filter((v) => v.acidAmount === 0)
-      .map((v) => v.capacity);
+    const cleanVessels = state.vessels.filter((v) => v.acidAmount === 0);
+    const capacities = cleanVessels.map((v) => v.capacity);
+    const currentAmounts = cleanVessels.map((v) => v.amount);
 
     if (capacities.length === 0) {
       state.targetAmount =
         Math.floor(Math.random() * difficultyConfig.maxVolume) + 1;
     } else {
-      state.targetAmount = generateAchievableTarget(
+      state.targetAmount = generateComplexTarget(
         capacities,
+        currentAmounts,
         difficultyConfig.maxVolume
       );
     }
@@ -561,24 +741,73 @@ const Game = (function () {
     randomizeVesselContents();
   };
 
-  const generateAchievableTarget = (capacities, maxVolume) => {
+  const generateComplexTarget = (capacities, currentAmounts, maxVolume) => {
     const possibleTargets = new Set();
 
-    capacities.forEach((capacity) => {
-      possibleTargets.add(capacity);
+    currentAmounts.forEach((amount) => {
+      if (amount > 0 && amount <= maxVolume) {
+        possibleTargets.add(amount);
+      }
+    });
 
+    capacities.forEach((capacity, i) => {
       if (capacity % 2 === 0) possibleTargets.add(capacity / 2);
       if (capacity % 3 === 0) possibleTargets.add(capacity / 3);
       if (capacity % 4 === 0) possibleTargets.add(capacity / 4);
-    });
 
-    for (let i = 0; i < capacities.length; i++) {
       for (let j = i + 1; j < capacities.length; j++) {
         const sum = capacities[i] + capacities[j];
-        if (sum <= maxVolume) possibleTargets.add(sum);
+        if (sum <= maxVolume && sum > maxVolume * 0.3) {
+          possibleTargets.add(sum);
+        }
 
         const diff = Math.abs(capacities[i] - capacities[j]);
-        if (diff > 0) possibleTargets.add(diff);
+        if (diff > 0 && diff > maxVolume * 0.2) {
+          possibleTargets.add(diff);
+        }
+
+        for (let k = j + 1; k < capacities.length; k++) {
+          const tripleSum = capacities[i] + capacities[j] + capacities[k];
+          if (tripleSum <= maxVolume && tripleSum > maxVolume * 0.5) {
+            possibleTargets.add(tripleSum);
+          }
+        }
+      }
+    });
+
+    if (state.currentLevel >= 2) {
+      for (let i = 0; i < capacities.length; i++) {
+        for (let j = 0; j < capacities.length; j++) {
+          if (i !== j) {
+            const complex1 = capacities[i] + capacities[j] - capacities[0];
+            if (complex1 > 0 && complex1 <= maxVolume) {
+              possibleTargets.add(complex1);
+            }
+
+            const complex2 = capacities[i] * 2 - capacities[j];
+            if (complex2 > 0 && complex2 <= maxVolume) {
+              possibleTargets.add(complex2);
+            }
+          }
+        }
+      }
+
+      const primesInRange = [];
+      for (let num = 2; num <= maxVolume; num++) {
+        let isPrime = true;
+        for (let i = 2; i <= Math.sqrt(num); i++) {
+          if (num % i === 0) {
+            isPrime = false;
+            break;
+          }
+        }
+        if (isPrime && num > 5) primesInRange.push(num);
+      }
+
+      if (primesInRange.length > 0 && Math.random() < 0.3) {
+        const randomPrime =
+          primesInRange[Math.floor(Math.random() * primesInRange.length)];
+        possibleTargets.add(randomPrime);
       }
     }
 
@@ -590,16 +819,31 @@ const Game = (function () {
       return Math.floor(Math.random() * maxVolume) + 1;
     }
 
-    const difficultyConfig = config[state.difficulty];
-    if (state.tasksCompleted < difficultyConfig.tasksPerLevel / 2) {
-      const easyTargets = validTargets.filter((v) => v <= maxVolume / 2);
-      if (easyTargets.length > 0) {
-        return easyTargets[Math.floor(Math.random() * easyTargets.length)];
+    if (state.tasksCompleted < config[state.difficulty].tasksPerLevel / 3) {
+      const mediumTargets = validTargets.filter(
+        (v) => v <= maxVolume * 0.7 && v >= maxVolume * 0.3
+      );
+      if (mediumTargets.length > 0) {
+        return mediumTargets[Math.floor(Math.random() * mediumTargets.length)];
       }
-    } else {
-      const hardTargets = validTargets.filter((v) => v > maxVolume / 2);
+    } else if (
+      state.tasksCompleted <
+      (config[state.difficulty].tasksPerLevel * 2) / 3
+    ) {
+      const hardTargets = validTargets.filter(
+        (v) => v > maxVolume * 0.6 || v < maxVolume * 0.2
+      );
       if (hardTargets.length > 0) {
         return hardTargets[Math.floor(Math.random() * hardTargets.length)];
+      }
+    } else {
+      const veryHardTargets = validTargets.filter((v) => {
+        return (v % 2 !== 0 && v > 5) || v > maxVolume * 0.8 || v < 3;
+      });
+      if (veryHardTargets.length > 0) {
+        return veryHardTargets[
+          Math.floor(Math.random() * veryHardTargets.length)
+        ];
       }
     }
 
@@ -607,29 +851,60 @@ const Game = (function () {
   };
 
   const randomizeVesselContents = () => {
-    state.vessels.forEach((vessel, index) => {
-      if (vessel.acidAmount === 0) {
-        const randomChoice = Math.random();
-        if (randomChoice < 0.3) {
-          vessel.amount = 0;
-        } else if (randomChoice < 0.6) {
-          vessel.amount = vessel.capacity;
+    const difficultyConfig = config[state.difficulty];
+
+    if (Math.random() < difficultyConfig.randomizeChance) {
+      state.vessels.forEach((vessel, index) => {
+        if (vessel.acidAmount === 0) {
+          const randomChoice = Math.random();
+          if (randomChoice < 0.4) {
+            const pattern = Math.random();
+            if (pattern < 0.25) {
+              vessel.amount = 0;
+            } else if (pattern < 0.5) {
+              vessel.amount = vessel.capacity;
+            } else if (pattern < 0.75) {
+              const divisors = [];
+              for (let i = 1; i <= vessel.capacity; i++) {
+                if (vessel.capacity % i === 0) divisors.push(i);
+              }
+              vessel.amount =
+                divisors[Math.floor(Math.random() * divisors.length)];
+            } else {
+              const primes = [2, 3, 5, 7, 11, 13, 17, 19];
+              const availablePrimes = primes.filter((p) => p < vessel.capacity);
+              if (availablePrimes.length > 0 && Math.random() > 0.5) {
+                vessel.amount =
+                  availablePrimes[
+                    Math.floor(Math.random() * availablePrimes.length)
+                  ];
+              } else {
+                vessel.amount = Math.floor(
+                  Math.random() * (vessel.capacity + 1)
+                );
+              }
+            }
+          }
         } else {
-          vessel.amount = Math.floor(Math.random() * (vessel.capacity + 1));
+          if (Math.random() > 0.7 && vessel.capacity - vessel.acidAmount > 0) {
+            vessel.amount = Math.floor(
+              Math.random() * (vessel.capacity - vessel.acidAmount)
+            );
+          }
+          if (Math.random() > 0.6) {
+            vessel.acidAmount = Math.min(
+              vessel.capacity - 1,
+              Math.floor(Math.random() * (vessel.capacity * 0.8)) + 1
+            );
+          }
         }
-      } else {
-        vessel.amount = 0;
-        if (Math.random() > 0.5) {
-          vessel.acidAmount =
-            Math.floor(Math.random() * (vessel.capacity * 0.7)) + 1;
-        }
+
+        updateVesselDisplay(index);
+      });
+
+      if (Math.random() > 0.3) {
+        showMessage("Начальные условия изменились!", true, "info", 2500);
       }
-
-      updateVesselDisplay(index);
-    });
-
-    if (Math.random() > 0.5) {
-      showMessage("Начальные условия изменились!", true, "info", 2500);
     }
   };
 
@@ -801,9 +1076,14 @@ const Game = (function () {
 
     vessel.amount = vessel.capacity;
     updateVesselDisplay(vesselIndex);
-    state.score = Math.max(0, state.score - 2);
+    state.score = Math.max(0, state.score - 5);
     updateScoreDisplay();
-    showMessage(`Емкость ${vesselIndex + 1} заполнена`, true, "info", 2500);
+    showMessage(
+      `Емкость ${vesselIndex + 1} заполнена (-5 очков)`,
+      true,
+      "info",
+      2500
+    );
   };
 
   const emptySelectedVessel = () => {
@@ -823,9 +1103,14 @@ const Game = (function () {
 
     vessel.amount = 0;
     updateVesselDisplay(vesselIndex);
-    state.score = Math.max(0, state.score - 2);
+    state.score = Math.max(0, state.score - 5);
     updateScoreDisplay();
-    showMessage(`Емкость ${vesselIndex + 1} опустошена`, true, "info", 2500);
+    showMessage(
+      `Емкость ${vesselIndex + 1} опустошена (-5 очков)`,
+      true,
+      "info",
+      2500
+    );
   };
 
   const transferWater = () => {
@@ -860,6 +1145,66 @@ const Game = (function () {
 
     const sourceHasAcid = source.acidAmount > 0;
     const targetHasAcid = target.acidAmount > 0;
+
+    if (state.currentLevel === 3 && sourceHasAcid && !targetHasAcid) {
+      if (
+        state.acidRules &&
+        !state.acidRules.canTransferToEmpty &&
+        target.amount === 0
+      ) {
+        showMessage(
+          "На этом уровне нельзя переливать кислоту в пустые сосуды!",
+          true,
+          "error",
+          3500
+        );
+        isTransferring = false;
+        return;
+      }
+
+      if (state.acidRules && state.acidRules.acidEvaporation) {
+        const evaporationChance = 0.2;
+        if (Math.random() < evaporationChance) {
+          const acidTransfer = Math.min(source.acidAmount, target.capacity);
+          const evaporated = Math.floor(acidTransfer * 0.3);
+          const actualTransfer = acidTransfer - evaporated;
+
+          if (actualTransfer === 0) {
+            showMessage(
+              "Вся кислота испарилась при переливании!",
+              true,
+              "warning",
+              3000
+            );
+            source.acidAmount = 0;
+            updateVesselAcidDisplay(sourceIndex, 0);
+            isTransferring = false;
+            return;
+          }
+
+          source.acidAmount -= acidTransfer;
+          target.acidAmount = (target.acidAmount || 0) + actualTransfer;
+
+          updateVesselAcidDisplay(targetIndex, target.acidAmount);
+          updateVesselAcidDisplay(sourceIndex, source.acidAmount);
+
+          showMessage(
+            `Перелито ${actualTransfer} л кислоты (${evaporated} л испарилось)`,
+            true,
+            "warning",
+            3000
+          );
+
+          updateVesselDisplay(sourceIndex);
+          updateVesselDisplay(targetIndex);
+          animateVessel(sourceIndex, "shake");
+          animateVessel(targetIndex, "bounce");
+          isTransferring = false;
+          setTimeout(() => (isTransferring = false), 300);
+          return;
+        }
+      }
+    }
 
     if (sourceHasAcid && !targetHasAcid && source.amount === 0) {
       if (target.amount > 0) {
@@ -1068,6 +1413,35 @@ const Game = (function () {
     updateVesselStatus(index);
   };
 
+  const calculateSolutionComplexity = (vessel, targetAmount) => {
+    const capacity = vessel.capacity;
+
+    if (targetAmount === capacity) return "easy";
+    if (targetAmount === capacity / 2 || targetAmount === capacity / 4)
+      return "easy";
+    if (targetAmount <= 1) return "easy";
+
+    const smallPrimes = [2, 3, 5];
+    const isPrime = (num) => {
+      for (let i = 2, s = Math.sqrt(num); i <= s; i++)
+        if (num % i === 0) return false;
+      return num > 1;
+    };
+
+    if (isPrime(targetAmount) && !smallPrimes.includes(targetAmount))
+      return "hard";
+
+    if (
+      targetAmount % 2 !== 0 &&
+      targetAmount % 3 !== 0 &&
+      targetAmount % 5 !== 0
+    ) {
+      return "hard";
+    }
+
+    return "medium";
+  };
+
   const checkSolution = () => {
     if (state.levelCompleted) return;
 
@@ -1088,10 +1462,66 @@ const Game = (function () {
       const found = foundIndex !== -1;
 
       if (found) {
+        let timeBonus = Math.floor(state.timeLeft / 10);
+        let basePoints = 100;
+
+        if (state.currentLevel === 3) {
+          const solutionVessel = validVessels[foundIndex];
+          const solutionComplexity = calculateSolutionComplexity(
+            solutionVessel,
+            state.targetAmount
+          );
+
+          if (solutionComplexity === "easy") {
+            timeBonus = Math.floor(timeBonus * 0.5);
+            basePoints = 80;
+            showMessage(
+              `Правильно, но решение слишком простое! Бонус уменьшен. +${Math.floor(
+                basePoints * config[state.difficulty].scoreMultiplier
+              )} очков`,
+              true,
+              "info",
+              3500
+            );
+          } else if (solutionComplexity === "hard") {
+            timeBonus = Math.floor(timeBonus * 1.2);
+            basePoints = 120;
+            showMessage(
+              `Отличное сложное решение! +${Math.floor(
+                (basePoints + timeBonus) *
+                  config[state.difficulty].scoreMultiplier
+              )} очков`,
+              true,
+              "success",
+              3500
+            );
+          } else {
+            showMessage(
+              `Правильно! +${Math.floor(
+                (basePoints + timeBonus) *
+                  config[state.difficulty].scoreMultiplier
+              )} очков`,
+              true,
+              "success",
+              3500
+            );
+          }
+        } else {
+          showMessage(
+            `Правильно! Вы отмерили ${state.targetAmount} л. +${Math.floor(
+              (basePoints + timeBonus) *
+                config[state.difficulty].scoreMultiplier
+            )} очков!`,
+            true,
+            "success",
+            3500
+          );
+        }
+
         const difficultyConfig = config[state.difficulty];
-        const points =
-          (100 + Math.floor(state.timeLeft / 10)) *
-          difficultyConfig.scoreMultiplier;
+        const points = Math.floor(
+          (basePoints + timeBonus) * difficultyConfig.scoreMultiplier
+        );
 
         state.score += points;
         state.tasksCompleted++;
@@ -1113,12 +1543,6 @@ const Game = (function () {
             4000
           );
         } else {
-          showMessage(
-            `Правильно! Вы отмерили ${state.targetAmount} л. +${points} очков!`,
-            true,
-            "success",
-            3500
-          );
           setTimeout(() => {
             document.getElementById("game-message").classList.remove("show");
             targetFill.style.height = "0%";
@@ -1136,26 +1560,30 @@ const Game = (function () {
           }, 3500);
         }
       } else {
+        let penalty = 20;
+        if (state.currentLevel === 2) penalty = 30;
+        if (state.currentLevel === 3) penalty = 40;
+
         const acidVesselIndex = state.vessels.findIndex(
           (v) => v.amount === state.targetAmount && v.acidAmount > 0
         );
         if (acidVesselIndex !== -1) {
           showMessage(
-            `Цель достигнута, но в сосуде есть кислота! Используйте другой сосуд.`,
+            `Цель достигнута, но в сосуде есть кислота! Используйте другой сосуд. Штраф: -${penalty} очков`,
             true,
             "warning",
             3500
           );
         } else {
           showMessage(
-            "Неправильно! Ни одна емкость не содержит нужное количество воды.",
+            `Неправильно! Ни одна емкость не содержит нужное количество воды. Штраф: -${penalty} очков`,
             true,
             "error",
             3000
           );
         }
 
-        state.score = Math.max(0, state.score - 20);
+        state.score = Math.max(0, state.score - penalty);
         updateScoreDisplay();
         document.getElementById("vessels-container").classList.add("shake");
         setTimeout(
@@ -1242,6 +1670,7 @@ const Game = (function () {
     state.acidPresent = false;
     state.acidVessels = [];
     state.acidAmounts = [];
+    state.acidRules = null;
 
     if (state.currentLevel > 3) return completeGame();
 
@@ -1322,10 +1751,12 @@ const Game = (function () {
 
     const scoreValue = parseInt(finalScore.textContent) || 0;
     const message =
-      scoreValue > 1000
-        ? "Отличный результат! Вы настоящий мастер измерений!"
+      scoreValue > 2000
+        ? "Невероятный результат! Вы гений измерений!"
+        : scoreValue > 1000
+        ? "Отличный результат! Вы настоящий мастер!"
         : scoreValue > 500
-        ? "Хороший результат! Вы отлично справились с заданием!"
+        ? "Хороший результат! Вы хорошо справились!"
         : scoreValue > 200
         ? "Неплохой результат! Есть куда стремиться!"
         : "Попробуйте еще раз, чтобы улучшить свой результат!";
